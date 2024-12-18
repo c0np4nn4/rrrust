@@ -62,7 +62,7 @@ async fn handle_websocket_request(
     ]"#;
 
     write
-        .send(Message::Text(subscription_message.to_string()))
+        .send(Message::Text(subscription_message.into()))
         .await?;
 
     let mut recent_data: Vec<TickerData> = Vec::new();
