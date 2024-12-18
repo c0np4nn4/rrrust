@@ -1,5 +1,6 @@
 use chrono::{Local, TimeZone, Utc};
 use futures_util::{SinkExt, StreamExt};
+use helpers::get_tickers_upbit::get_all_tickers_upbit;
 use serde::{Deserialize, Serialize};
 use tokio::{
     self,
@@ -7,6 +8,8 @@ use tokio::{
 };
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::Message;
+
+pub mod helpers;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct TickerData {
@@ -55,11 +58,9 @@ async fn handle_websocket_request(
 
     let (mut write, mut read) = ws_stream.split();
 
-    // Send a subscription message to the WebSocket server
-    let subscription_message = r#"[
-        {"ticket":"test"},
-        {"type":"ticker","codes":["KRW-BTC"]}
-    ]"#;
+    let subscription_message = get_all_tickers_upbit()
+    .await
+    .expect("Failed to fetch subscription message");
 
     write
         .send(Message::Text(subscription_message.into()))
@@ -74,7 +75,7 @@ async fn handle_websocket_request(
                 match serde_json::from_slice::<TickerData>(&data) {
                     Ok(ticker) => {
                         // Maintain the last 5 data points
-                        if recent_data.len() >= 8 {
+                        if recent_data.len() >= 24 {
                             recent_data.remove(0);
                         }
                         recent_data.push(ticker.clone());
